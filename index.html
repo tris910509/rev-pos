@@ -304,88 +304,111 @@
 
         /*** Fitur Transaksi ***/
     function showTransaksi(container) {
-            const pelanggan = getFromLocalStorage("pelanggan");
-            const produk = getFromLocalStorage("produk");
-            const transaksi = getFromLocalStorage("transaksi");
-            container.innerHTML = `
-                <h2>Transaksi Penjualan</h2>
-                <form onsubmit="addTransaksi(event)">
-                    <select id="idPelanggan" required>
-                        <option value="">Pilih Pelanggan</option>
-                        ${pelanggan.map((p, i) => `<option value="${i}">${p}</option>`).join('')}
-                    </select>
-                    <select id="idProduk" required>
-                        <option value="">Pilih Produk</option>
-                        ${produk.map((p, i) => `<option value="${i}">${p.nama} - ${p.stok} pcs</option>`).join('')}
-                    </select>
-                    <input type="number" id="jumlahProduk" placeholder="Jumlah" min="1" required>
-                    <button type="submit">Transaksi</button>
-                </form>
-                <h3>Daftar Transaksi</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Pelanggan</th>
-                            <th>Produk</th>
-                            <th>Jumlah</th>
-                            <th>Total Harga</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${transaksi.map((t, i) => `
-                            <tr>
-                                <td>${pelanggan[t.idPelanggan]}</td>
-                                <td>${t.namaProduk}</td>
-                                <td>${t.jumlah}</td>
-                                <td>${t.totalHarga}</td>
-                                <td><button onclick="deleteTransaksi(${i})">Hapus</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+    const pelanggan = getFromLocalStorage("pelanggan");
+    const produk = getFromLocalStorage("produk");
+    const transaksi = getFromLocalStorage("transaksi");
+    container.innerHTML = `
+        <h2>Transaksi Penjualan</h2>
+        <form onsubmit="addTransaksi(event)">
+            <select id="idPelanggan" required>
+                <option value="">Pilih Pelanggan</option>
+                ${pelanggan.map((p, i) => `<option value="${i}">${p}</option>`).join('')}
+            </select>
+            <select id="idProduk" required>
+                <option value="">Pilih Produk</option>
+                ${produk.map((p, i) => `<option value="${i}">${p.nama} - ${p.stok} pcs</option>`).join('')}
+            </select>
+            <input type="number" id="jumlahProduk" placeholder="Jumlah" min="1" required>
+            <select id="metodePembayaran" required>
+                <option value="">Pilih Metode Pembayaran</option>
+                <option value="cash">Cash</option>
+                <option value="kontraBon">Kontra Bon</option>
+                <option value="tf">Transfer</option>
+                <option value="qr">QR Code</option>
+            </select>
+            <button type="submit">Transaksi</button>
+        </form>
+        <h3>Daftar Transaksi</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pelanggan</th>
+                    <th>Produk</th>
+                    <th>Jumlah</th>
+                    <th>Total Harga</th>
+                    <th>Status</th>
+                    <th>Metode Pembayaran</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${transaksi.map((t, i) => `
+                    <tr>
+                        <td>${pelanggan[t.idPelanggan]}</td>
+                        <td>${t.namaProduk}</td>
+                        <td>${t.jumlah}</td>
+                        <td>${t.totalHarga}</td>
+                        <td>${t.status}</td>
+                        <td>${t.metodePembayaran}</td>
+                        <td><button onclick="deleteTransaksi(${i})">Hapus</button></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function addTransaksi(event) {
+    event.preventDefault();
+    const pelangganId = document.getElementById("idPelanggan").value;
+    const produkId = document.getElementById("idProduk").value;
+    const jumlah = parseInt(document.getElementById("jumlahProduk").value);
+    const metodePembayaran = document.getElementById("metodePembayaran").value;
+    const produk = getFromLocalStorage("produk")[produkId];
+
+    if (produk.stok < jumlah) {
+        alert("Stok tidak cukup!");
+        return;
+    }
+
+    produk.stok -= jumlah;
+    saveToLocalStorage("produk", getFromLocalStorage("produk"));
+
+    const pelanggan = getFromLocalStorage("pelanggan");
+    const transaksi = getFromLocalStorage("transaksi");
+    transaksi.push({
+        idPelanggan: pelangganId,
+        namaProduk: produk.nama,
+        jumlah,
+        totalHarga: produk.harga * jumlah,
+        status: "belum lunas", // status awal
+        metodePembayaran,
+    });
+    saveToLocalStorage("transaksi", transaksi);
+    navigate('transaksi');
+}
+
+function updateStatusTransaksi(index, status) {
+    const transaksi = getFromLocalStorage("transaksi");
+    transaksi[index].status = status;
+    saveToLocalStorage("transaksi", transaksi);
+    navigate('transaksi');
+}
+
+function deleteTransaksi(index) {
+    const transaksi = getFromLocalStorage("transaksi");
+    const produk = getFromLocalStorage("produk");
+    const t = transaksi[index];
+    produk.forEach(p => {
+        if (p.nama === t.namaProduk) {
+            p.stok += t.jumlah;
         }
-
-        function addTransaksi(event) {
-            event.preventDefault();
-            const pelangganId = document.getElementById("idPelanggan").value;
-            const produkId = document.getElementById("idProduk").value;
-            const jumlah = parseInt(document.getElementById("jumlahProduk").value);
-            const produk = getFromLocalStorage("produk")[produkId];
-            if (produk.stok < jumlah) {
-                alert("Stok tidak cukup!");
-                return;
-            }
-            produk.stok -= jumlah;
-            saveToLocalStorage("produk", getFromLocalStorage("produk"));
-            const pelanggan = getFromLocalStorage("pelanggan");
-            const transaksi = getFromLocalStorage("transaksi");
-            transaksi.push({
-                idPelanggan: pelangganId,
-                namaProduk: produk.nama,
-                jumlah,
-                totalHarga: produk.harga * jumlah
-            });
-            saveToLocalStorage("transaksi", transaksi);
-            navigate('transaksi');
-        }
-
-        function deleteTransaksi(index) {
-            const transaksi = getFromLocalStorage("transaksi");
-            const produk = getFromLocalStorage("produk");
-            const t = transaksi[index];
-            produk.forEach(p => {
-                if (p.nama === t.namaProduk) {
-                    p.stok += t.jumlah;
-                }
-            });
-            saveToLocalStorage("produk", produk);
-            transaksi.splice(index, 1);
-            saveToLocalStorage("transaksi", transaksi);
-            navigate('transaksi');
-        } 
-
+    });
+    saveToLocalStorage("produk", produk);
+    transaksi.splice(index, 1);
+    saveToLocalStorage("transaksi", transaksi);
+    navigate('transaksi');
+}
 
 
 
