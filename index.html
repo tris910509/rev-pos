@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Kasir Lengkap</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        #app {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            padding: 10px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: calc(100% - 20px);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Aplikasi Kasir Lengkap</h1>
+        <nav>
+            <button onclick="navigate('pelanggan')">Pelanggan</button>
+            <button onclick="navigate('produk')">Produk</button>
+            <button onclick="navigate('kategori')">Kategori</button>
+            <button onclick="navigate('supplier')">Supplier</button>
+            <button onclick="navigate('transaksi')">Transaksi</button>
+            <button onclick="navigate('laporan')">Laporan</button>
+        </nav>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        // Helpers for LocalStorage
+        function saveToLocalStorage(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        function getFromLocalStorage(key) {
+            return JSON.parse(localStorage.getItem(key)) || [];
+        }
+
+        // Navigation
+        function navigate(page) {
+            const content = document.getElementById("content");
+            switch (page) {
+                case 'pelanggan': showPelanggan(content); break;
+                case 'produk': showProduk(content); break;
+                case 'kategori': showKategori(content); break;
+                case 'supplier': showSupplier(content); break;
+                case 'transaksi': showTransaksi(content); break;
+                case 'laporan': showLaporan(content); break;
+                default: content.innerHTML = "<p>Halaman tidak ditemukan</p>";
+            }
+        }
+
+        // CRUD Pelanggan
+        function showPelanggan(container) {
+            const pelanggan = getFromLocalStorage("pelanggan");
+            container.innerHTML = `
+                <h2>Pelanggan</h2>
+                <form onsubmit="addPelanggan(event)">
+                    <input type="text" id="namaPelanggan" placeholder="Nama Pelanggan" required>
+                    <button type="submit">Tambah</button>
+                </form>
+                <table>
+                    <thead>
+                        <tr><th>Nama Pelanggan</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        ${pelanggan.map((p, i) => `
+                            <tr>
+                                <td>${p}</td>
+                                <td><button onclick="deletePelanggan(${i})">Hapus</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function addPelanggan(event) {
+            event.preventDefault();
+            const nama = document.getElementById("namaPelanggan").value;
+            const pelanggan = getFromLocalStorage("pelanggan");
+            pelanggan.push(nama);
+            saveToLocalStorage("pelanggan", pelanggan);
+            navigate('pelanggan');
+        }
+
+        function deletePelanggan(index) {
+            const pelanggan = getFromLocalStorage("pelanggan");
+            pelanggan.splice(index, 1);
+            saveToLocalStorage("pelanggan", pelanggan);
+            navigate('pelanggan');
+        }
+
+        // CRUD Produk
+        function showProduk(container) {
+            const produk = getFromLocalStorage("produk");
+            const kategori = getFromLocalStorage("kategori");
+            const supplier = getFromLocalStorage("supplier");
+            container.innerHTML = `
+                <h2>Produk</h2>
+                <form onsubmit="addProduk(event)">
+                    <input type="text" id="namaProduk" placeholder="Nama Produk" required>
+                    <input type="number" id="stokProduk" placeholder="Stok" required>
+                    <input type="number" id="hargaProduk" placeholder="Harga" required>
+                    <select id="kategoriProduk" required>
+                        <option value="">Pilih Kategori</option>
+                        ${kategori.map(k => `<option value="${k}">${k}</option>`).join('')}
+                    </select>
+                    <select id="supplierProduk" required>
+                        <option value="">Pilih Supplier</option>
+                        ${supplier.map(s => `<option value="${s}">${s}</option>`).join('')}
+                    </select>
+                    <button type="submit">Tambah</button>
+                </form>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Produk</th>
+                            <th>Stok</th>
+                            <th>Harga</th>
+                            <th>Kategori</th>
+                            <th>Supplier</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${produk.map((p, i) => `
+                            <tr>
+                                <td>${p.nama}</td>
+                                <td>${p.stok}</td>
+                                <td>${p.harga}</td>
+                                <td>${p.kategori}</td>
+                                <td>${p.supplier}</td>
+                                <td><button onclick="deleteProduk(${i})">Hapus</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function addProduk(event) {
+            event.preventDefault();
+            const nama = document.getElementById("namaProduk").value;
+            const stok = parseInt(document.getElementById("stokProduk").value);
+            const harga = parseInt(document.getElementById("hargaProduk").value);
+            const kategori = document.getElementById("kategoriProduk").value;
+            const supplier = document.getElementById("supplierProduk").value;
+            const produk = getFromLocalStorage("produk");
+            produk.push({ nama, stok, harga, kategori, supplier });
+            saveToLocalStorage("produk", produk);
+            navigate('produk');
+        }
+
+        function deleteProduk(index) {
+            const produk = getFromLocalStorage("produk");
+            produk.splice(index, 1);
+            saveToLocalStorage("produk", produk);
+            navigate('produk');
+        }
+
+        // CRUD Kategori
+        function showKategori(container) {
+            const kategori = getFromLocalStorage("kategori");
+            container.innerHTML = `
+                <h2>Kategori</h2>
+                <form onsubmit="addKategori(event)">
+                    <input type="text" id="namaKategori" placeholder="Nama Kategori" required>
+                    <button type="submit">Tambah</button>
+                </form>
+                <table>
+                    <thead>
+                        <tr><th>Nama Kategori</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        ${kategori.map((k, i) => `
+                            <tr>
+                                <td>${k}</td>
+                                <td><button onclick="deleteKategori(${i})">Hapus</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function addKategori(event) {
+            event.preventDefault();
+            const nama = document.getElementById("namaKategori").value;
+            const kategori = getFromLocalStorage("kategori");
+            kategori.push(nama);
+            saveToLocalStorage("kategori", kategori);
+            navigate('kategori');
+        }
+
+        function deleteKategori(index) {
+            const kategori = getFromLocalStorage("kategori");
+            kategori.splice(index, 1);
+            saveToLocalStorage("kategori", kategori);
+            navigate('kategori');
+        }
+
+        // Load default page
+        navigate('pelanggan');
+    </script>
+</body>
+</html>
