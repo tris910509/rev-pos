@@ -418,35 +418,6 @@ function confirmPayment(index) {
 
 
 
-        function deleteTransaksi(index) {
-    const transaksi = getFromLocalStorage("transaksi");
-    const produk = getFromLocalStorage("produk");
-    const t = transaksi[index];
-    produk.forEach(p => {
-        if (p.nama === t.namaProduk) {
-            p.stok += t.jumlah;
-        }
-    });
-    saveToLocalStorage("produk", produk);
-    transaksi.splice(index, 1);
-    saveToLocalStorage("transaksi", transaksi);
-    navigate('transaksi');
-}
-
-
-
-
-
-        
-function getFromLocalStorage(key) {
-    return JSON.parse(localStorage.getItem(key)) || [];
-}
-
-function saveToLocalStorage(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
-}
-
-
 
 function navigate(page) {
     if (page === 'transaksi') {
