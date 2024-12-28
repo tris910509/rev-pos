@@ -312,6 +312,7 @@
 
         /*** Fitur Transaksi ***/
 function showTransaksi(container) {
+function showTransaksi(container) {
     const pelanggan = getFromLocalStorage("pelanggan");
     const produk = getFromLocalStorage("produk");
     const transaksi = getFromLocalStorage("transaksi");
@@ -362,7 +363,7 @@ function showTransaksi(container) {
                         <td>${t.metodePembayaran}</td>
                         <td>${t.metodePembayaran !== "cash" ? `<a href="${t.buktiPembayaran}" target="_blank">Lihat</a>` : '-'}</td>
                         <td>
-                            ${t.metodePembayaran === "cash" ? "Lunas" : `<button onclick="confirmPayment(${i})">Konfirmasi</button>`}
+                            ${t.status === "lunas" ? "Lunas" : t.metodePembayaran === "cash" ? "Lunas" : `<button onclick="confirmPayment(${i})">Konfirmasi</button>`}
                             ${t.status !== "lunas" ? `<button onclick="deleteTransaksi(${i})">Hapus</button>` : ''}
                         </td>
                     </tr>
@@ -395,7 +396,7 @@ function addTransaksi(event) {
         namaProduk: produk.nama,
         jumlah,
         totalHarga: produk.harga * jumlah,
-        status: "belum lunas", // status awal
+        status: metodePembayaran === "cash" ? "lunas" : "belum lunas",
         metodePembayaran,
         buktiPembayaran: metodePembayaran !== "cash" ? URL.createObjectURL(buktiPembayaran) : null
     });
@@ -411,6 +412,30 @@ function confirmPayment(index) {
 }
 
 
+
+
+
+    function deleteTransaksi(index) {
+    const transaksi = getFromLocalStorage("transaksi");
+    const produk = getFromLocalStorage("produk");
+    const t = transaksi[index];
+    produk.forEach(p => {
+        if (p.nama === t.namaProduk) {
+            p.stok += t.jumlah;
+        }
+    });
+    saveToLocalStorage("produk", produk);
+    transaksi.splice(index, 1);
+    saveToLocalStorage("transaksi", transaksi);
+    navigate('transaksi');
+}
+
+
+
+
+
+
+    
 
 
 
