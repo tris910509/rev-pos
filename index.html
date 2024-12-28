@@ -334,6 +334,7 @@ function showTransaksi(container) {
                 <option value="tf">Transfer</option>
                 <option value="qr">QR Code</option>
             </select>
+            <input type="file" id="buktiPembayaran" style="display: none;" />
             <button type="submit">Transaksi</button>
         </form>
         <h3>Daftar Transaksi</h3>
@@ -346,6 +347,7 @@ function showTransaksi(container) {
                     <th>Total Harga</th>
                     <th>Status</th>
                     <th>Metode Pembayaran</th>
+                    <th>Bukti Pembayaran</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -358,7 +360,11 @@ function showTransaksi(container) {
                         <td>${t.totalHarga}</td>
                         <td>${t.status}</td>
                         <td>${t.metodePembayaran}</td>
-                        <td><button onclick="deleteTransaksi(${i})">Hapus</button></td>
+                        <td>${t.metodePembayaran !== "cash" ? `<a href="${t.buktiPembayaran}" target="_blank">Lihat</a>` : '-'}</td>
+                        <td>
+                            ${t.metodePembayaran === "cash" ? "Lunas" : `<button onclick="confirmPayment(${i})">Konfirmasi</button>`}
+                            ${t.status !== "lunas" ? `<button onclick="deleteTransaksi(${i})">Hapus</button>` : ''}
+                        </td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -372,6 +378,7 @@ function addTransaksi(event) {
     const produkId = document.getElementById("idProduk").value;
     const jumlah = parseInt(document.getElementById("jumlahProduk").value);
     const metodePembayaran = document.getElementById("metodePembayaran").value;
+    const buktiPembayaran = metodePembayaran !== "cash" ? document.getElementById("buktiPembayaran").files[0] : null;
     const produk = getFromLocalStorage("produk")[produkId];
 
     if (produk.stok < jumlah) {
@@ -382,7 +389,6 @@ function addTransaksi(event) {
     produk.stok -= jumlah;
     saveToLocalStorage("produk", getFromLocalStorage("produk"));
 
-    const pelanggan = getFromLocalStorage("pelanggan");
     const transaksi = getFromLocalStorage("transaksi");
     transaksi.push({
         idPelanggan: pelangganId,
@@ -391,29 +397,15 @@ function addTransaksi(event) {
         totalHarga: produk.harga * jumlah,
         status: "belum lunas", // status awal
         metodePembayaran,
+        buktiPembayaran: metodePembayaran !== "cash" ? URL.createObjectURL(buktiPembayaran) : null
     });
     saveToLocalStorage("transaksi", transaksi);
     navigate('transaksi');
 }
 
-function updateStatusTransaksi(index, status) {
+function confirmPayment(index) {
     const transaksi = getFromLocalStorage("transaksi");
-    transaksi[index].status = status;
-    saveToLocalStorage("transaksi", transaksi);
-    navigate('transaksi');
-}
-
-function deleteTransaksi(index) {
-    const transaksi = getFromLocalStorage("transaksi");
-    const produk = getFromLocalStorage("produk");
-    const t = transaksi[index];
-    produk.forEach(p => {
-        if (p.nama === t.namaProduk) {
-            p.stok += t.jumlah;
-        }
-    });
-    saveToLocalStorage("produk", produk);
-    transaksi.splice(index, 1);
+    transaksi[index].status = "lunas";
     saveToLocalStorage("transaksi", transaksi);
     navigate('transaksi');
 }
