@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Kasir Lengkap</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            padding: 10px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: calc(100% - 20px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .upload-bukti {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Aplikasi Kasir Lengkap</h1>
+        <nav>
+            <button onclick="navigate('transaksi')">Transaksi</button>
+            <button onclick="navigate('pelanggan')">Halaman Pelanggan</button>
+        </nav>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        // Helpers for LocalStorage
+        function saveToLocalStorage(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        function getFromLocalStorage(key) {
+            return JSON.parse(localStorage.getItem(key)) || [];
+        }
+
+        // Navigation
+        function navigate(page) {
+            const content = document.getElementById("content");
+            if (page === 'transaksi') {
+                showTransaksi(content);
+            } else if (page === 'pelanggan') {
+                showPelanggan(content);
+            } else {
+                content.innerHTML = "<p>Halaman tidak ditemukan</p>";
+            }
+        }
+
+        /*** Fitur Transaksi ***/
+        function showTransaksi(container) {
+            const pelanggan = getFromLocalStorage("pelanggan");
+            const produk = getFromLocalStorage("produk");
+            const transaksi = getFromLocalStorage("transaksi");
+            container.innerHTML = `
+                <h2>Transaksi Penjualan</h2>
+                <form onsubmit="addTransaksi(event)">
+                    <select id="idPelanggan" required>
+                        <option value="">Pilih Pelanggan</option>
+                        ${pelanggan.map((p, i) => `<option value="${i}">${p.nama}</option>`).join('')}
+                    </select>
+                    <select id="idProduk" required>
+                        <option value="">Pilih Produk</option>
+                        ${produk.map((p, i) => `<option value="${i}">${p.nama} - ${p.stok} pcs</option>`).join('')}
+                    </select>
+                    <input type="number" id="jumlahProduk" placeholder="Jumlah" min="1" required>
+                    <select id="metodePembayaran" required>
+                        <option value="">Pilih Metode Pembayaran</option>
+                        <option value="cash">Cash</option>
+                        <option value="transfer">Transfer</option>
+                        <option value="qr">QR</option>
+                        <option value="kontrabon">Kontra Bon</option>
+                    </select>
+                    <button type="submit">Tambah Transaksi</button>
+                </form>
+                <h3>Daftar Transaksi</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pelanggan</th>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Total Harga</th>
+                            <th>Metode Pembayaran</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transaksi.map((t, i) => `
+                            <tr>
+                                <td>${t.pelangganNama}</td>
+                                <td>${t.produkNama}</td>
+                                <td>${t.jumlah}</td>
+                                <td>${t.totalHarga}</td>
+                                <td>${t.metodePembayaran}</td>
+                                <td>${t.status}</td>
+                                <td>
+                                    ${t.metodePembayaran !== 'cash' && t.status !== 'Lunas' ? `<button onclick="uploadBukti(${i})">Upload Bukti</button>` : ''}
+                                    <button onclick="deleteTransaksi(${i})">Hapus</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function addTransaksi(event) {
+            event.preventDefault();
+            const pelangganId = document.getElementById("idPelanggan").value;
+            const produkId = document.getElementById("idProduk").value;
+            const jumlah = parseInt(document.getElementById("jumlahProduk").value);
+            const metodePembayaran = document.getElementById("metodePembayaran").value;
+
+            const produk = getFromLocalStorage("produk")[produkId];
+            const pelanggan = getFromLocalStorage("pelanggan");
+
+            if (produk.stok < jumlah) {
+                alert("Stok tidak cukup!");
+                return;
+            }
+
+            produk.stok -= jumlah;
+            saveToLocalStorage("produk", getFromLocalStorage("produk"));
+
+            const transaksi = getFromLocalStorage("transaksi");
+            const totalHarga = produk.harga * jumlah;
+            const status = metodePembayaran === 'cash' ? 'Lunas' : 'Pending';
+
+            transaksi.push({
+                pelangganNama: pelanggan[pelangganId].nama,
+                produkNama: produk.nama,
+                jumlah,
+                totalHarga,
+                metodePembayaran,
+                status,
+                buktiBayar: ''
+            });
+
+            saveToLocalStorage("transaksi", transaksi);
+            navigate('transaksi');
+        }
+
+        function uploadBukti(index) {
+            const buktiBayar = prompt("Masukkan URL Bukti Pembayaran (contoh: https://contoh.com/bukti.jpg):");
+            if (!buktiBayar) return;
+
+            const transaksi = getFromLocalStorage("transaksi");
+            transaksi[index].buktiBayar = buktiBayar;
+            transaksi[index].status = 'Lunas';
+            saveToLocalStorage("transaksi", transaksi);
+            navigate('transaksi');
+        }
+
+        function deleteTransaksi(index) {
+            const transaksi = getFromLocalStorage("transaksi");
+            transaksi.splice(index, 1);
+            saveToLocalStorage("transaksi", transaksi);
+            navigate('transaksi');
+        }
+
+        /*** Halaman Pelanggan ***/
+        function showPelanggan(container) {
+            const transaksi = getFromLocalStorage("transaksi");
+            container.innerHTML = `
+                <h2>Riwayat Transaksi Pelanggan</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Total Harga</th>
+                            <th>Status</th>
+                            <th>Bukti Pembayaran</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transaksi.map(t => `
+                            <tr>
+                                <td>${t.produkNama}</td>
+                                <td>${t.jumlah}</td>
+                                <td>${t.totalHarga}</td>
+                                <td>${t.status}</td>
+                                <td>${t.buktiBayar ? `<a href="${t.buktiBayar}" target="_blank">Lihat Bukti</a>` : 'Belum Ada'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Load default page
+        navigate('transaksi');
+    </script>
+</body>
+</html>
