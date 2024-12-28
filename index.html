@@ -311,7 +311,10 @@
         }
 
         /*** Fitur Transaksi ***/
-function showTransaksi(container) {
+
+
+
+        
 function showTransaksi(container) {
     const pelanggan = getFromLocalStorage("pelanggan");
     const produk = getFromLocalStorage("produk");
@@ -363,7 +366,7 @@ function showTransaksi(container) {
                         <td>${t.metodePembayaran}</td>
                         <td>${t.metodePembayaran !== "cash" ? `<a href="${t.buktiPembayaran}" target="_blank">Lihat</a>` : '-'}</td>
                         <td>
-                            ${t.status === "lunas" ? "Lunas" : t.metodePembayaran === "cash" ? "Lunas" : `<button onclick="confirmPayment(${i})">Konfirmasi</button>`}
+                            ${t.metodePembayaran === "cash" ? "Lunas" : `<button onclick="confirmPayment(${i})">Konfirmasi</button>`}
                             ${t.status !== "lunas" ? `<button onclick="deleteTransaksi(${i})">Hapus</button>` : ''}
                         </td>
                     </tr>
@@ -415,7 +418,7 @@ function confirmPayment(index) {
 
 
 
-    function deleteTransaksi(index) {
+        function deleteTransaksi(index) {
     const transaksi = getFromLocalStorage("transaksi");
     const produk = getFromLocalStorage("produk");
     const t = transaksi[index];
@@ -434,12 +437,36 @@ function confirmPayment(index) {
 
 
 
+        
+function getFromLocalStorage(key) {
+    return JSON.parse(localStorage.getItem(key)) || [];
+}
 
-    
+function saveToLocalStorage(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
+
+
+
+function navigate(page) {
+    if (page === 'transaksi') {
+        showTransaksi(document.getElementById('transaksiContainer'));
+    }
+}
 
 
 
 
+
+
+
+
+
+
+
+
+
+        
 
 
 
