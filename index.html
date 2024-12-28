@@ -13,7 +13,7 @@
         }
 
         #app {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             background: white;
@@ -67,6 +67,10 @@
             border-radius: 4px;
             width: calc(100% - 20px);
         }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -107,11 +111,11 @@
             }
         }
 
-        // CRUD Pelanggan
+        /*** Fitur Pelanggan ***/
         function showPelanggan(container) {
             const pelanggan = getFromLocalStorage("pelanggan");
             container.innerHTML = `
-                <h2>Pelanggan</h2>
+                <h2>Data Pelanggan</h2>
                 <form onsubmit="addPelanggan(event)">
                     <input type="text" id="namaPelanggan" placeholder="Nama Pelanggan" required>
                     <button type="submit">Tambah</button>
@@ -148,13 +152,13 @@
             navigate('pelanggan');
         }
 
-        // CRUD Produk
+        /*** Fitur Produk ***/
         function showProduk(container) {
             const produk = getFromLocalStorage("produk");
             const kategori = getFromLocalStorage("kategori");
             const supplier = getFromLocalStorage("supplier");
             container.innerHTML = `
-                <h2>Produk</h2>
+                <h2>Data Produk</h2>
                 <form onsubmit="addProduk(event)">
                     <input type="text" id="namaProduk" placeholder="Nama Produk" required>
                     <input type="number" id="stokProduk" placeholder="Stok" required>
@@ -216,11 +220,11 @@
             navigate('produk');
         }
 
-        // CRUD Kategori
+        /*** Fitur Kategori ***/
         function showKategori(container) {
             const kategori = getFromLocalStorage("kategori");
             container.innerHTML = `
-                <h2>Kategori</h2>
+                <h2>Kategori Produk</h2>
                 <form onsubmit="addKategori(event)">
                     <input type="text" id="namaKategori" placeholder="Nama Kategori" required>
                     <button type="submit">Tambah</button>
@@ -255,6 +259,176 @@
             kategori.splice(index, 1);
             saveToLocalStorage("kategori", kategori);
             navigate('kategori');
+        }
+
+        /*** Fitur Supplier ***/
+        function showSupplier(container) {
+            const supplier = getFromLocalStorage("supplier");
+            container.innerHTML = `
+                <h2>Data Supplier</h2>
+                <form onsubmit="addSupplier(event)">
+                    <input type="text" id="namaSupplier" placeholder="Nama Supplier" required>
+                    <button type="submit">Tambah</button>
+                </form>
+                <table>
+                    <thead>
+                        <tr><th>Nama Supplier</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        ${supplier.map((s, i) => `
+                            <tr>
+                                <td>${s}</td>
+                                <td><button onclick="deleteSupplier(${i})">Hapus</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function addSupplier(event) {
+            event.preventDefault();
+            const nama = document.getElementById("namaSupplier").value;
+            const supplier = getFromLocalStorage("supplier");
+            supplier.push(nama);
+            saveToLocalStorage("supplier", supplier);
+            navigate('supplier');
+        }
+
+        function deleteSupplier(index) {
+            const supplier = getFromLocalStorage("supplier");
+            supplier.splice(index, 1);
+            saveToLocalStorage("supplier", supplier);
+            navigate('supplier');
+        }
+
+        /*** Fitur Transaksi ***/
+        function showTransaksi(container) {
+            const pelanggan = getFromLocalStorage("pelanggan");
+            const produk = getFromLocalStorage("produk");
+            const transaksi = getFromLocalStorage("transaksi");
+            container.innerHTML = `
+                <h2>Transaksi Penjualan</h2>
+                <form onsubmit="addTransaksi(event)">
+                    <select id="idPelanggan" required>
+                        <option value="">Pilih Pelanggan</option>
+                        ${pelanggan.map((p, i) => `<option value="${i}">${p}</option>`).join('')}
+                    </select>
+                    <select id="idProduk" required>
+                        <option value="">Pilih Produk</option>
+                        ${produk.map((p, i) => `<option value="${i}">${p.nama} - ${p.stok} pcs</option>`).join('')}
+                    </select>
+                    <input type="number" id="jumlahProduk" placeholder="Jumlah" min="1" required>
+                    <button type="submit">Transaksi</button>
+                </form>
+                <h3>Daftar Transaksi</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pelanggan</th>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Total Harga</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${transaksi.map((t, i) => `
+                            <tr>
+                                <td>${pelanggan[t.idPelanggan]}</td>
+                                <td>${t.namaProduk}</td>
+                                <td>${t.jumlah}</td>
+                                <td>${t.totalHarga}</td>
+                                <td><button onclick="deleteTransaksi(${i})">Hapus</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function addTransaksi(event) {
+            event.preventDefault();
+            const pelangganId = document.getElementById("idPelanggan").value;
+            const produkId = document.getElementById("idProduk").value;
+            const jumlah = parseInt(document.getElementById("jumlahProduk").value);
+            const produk = getFromLocalStorage("produk")[produkId];
+            if (produk.stok < jumlah) {
+                alert("Stok tidak cukup!");
+                return;
+            }
+            produk.stok -= jumlah;
+            saveToLocalStorage("produk", getFromLocalStorage("produk"));
+            const pelanggan = getFromLocalStorage("pelanggan");
+            const transaksi = getFromLocalStorage("transaksi");
+            transaksi.push({
+                idPelanggan: pelangganId,
+                namaProduk: produk.nama,
+                jumlah,
+                totalHarga: produk.harga * jumlah
+            });
+            saveToLocalStorage("transaksi", transaksi);
+            navigate('transaksi');
+        }
+
+        function deleteTransaksi(index) {
+            const transaksi = getFromLocalStorage("transaksi");
+            const produk = getFromLocalStorage("produk");
+            const t = transaksi[index];
+            produk.forEach(p => {
+                if (p.nama === t.namaProduk) {
+                    p.stok += t.jumlah;
+                }
+            });
+            saveToLocalStorage("produk", produk);
+            transaksi.splice(index, 1);
+            saveToLocalStorage("transaksi", transaksi);
+            navigate('transaksi');
+        }
+
+        /*** Fitur Laporan ***/
+        function showLaporan(container) {
+            const laporan = getFromLocalStorage("transaksi");
+            container.innerHTML = `
+                <h2>Laporan Transaksi</h2>
+                <form onsubmit="filterLaporan(event)">
+                    <input type="date" id="filterTanggalAwal" required>
+                    <input type="date" id="filterTanggalAkhir" required>
+                    <button type="submit">Filter</button>
+                </form>
+                <h3>Daftar Laporan</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pelanggan</th>
+                            <th>Produk</th>
+                            <th>Jumlah</th>
+                            <th>Total Harga</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${laporan.map((t, i) => `
+                            <tr>
+                                <td>${getFromLocalStorage("pelanggan")[t.idPelanggan]}</td>
+                                <td>${t.namaProduk}</td>
+                                <td>${t.jumlah}</td>
+                                <td>${t.totalHarga}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function filterLaporan(event) {
+            event.preventDefault();
+            const tanggalAwal = document.getElementById("filterTanggalAwal").value;
+            const tanggalAkhir = document.getElementById("filterTanggalAkhir").value;
+            const laporan = getFromLocalStorage("transaksi").filter(t => {
+                const date = new Date(t.tanggal);
+                return date >= new Date(tanggalAwal) && date <= new Date(tanggalAkhir);
+            });
+            showLaporan(document.getElementById("content"));
         }
 
         // Load default page
